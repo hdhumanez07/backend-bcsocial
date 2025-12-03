@@ -1,0 +1,844 @@
+{
+	"info": {
+		"_postman_id": "51a02f21-0b8b-4728-b970-e1c158ebfdf0",
+		"name": "BC Social API",
+		"description": "REST API for products management and authentication with NestJS + PostgreSQL + TypeORM + JWT\n\n## Features\n- JWT Authentication\n- Complete CRUD for products\n- Data validation\n- Error handling\n- PostgreSQL with TypeORM\n\n## Environment Variables\n- `base_url`: API base URL (default: http://localhost:3000)\n- `auth_token`: JWT token for authentication (auto-generated on login)\n- `product_id`: Product ID for individual operations (auto-generated)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18448190"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Registro",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData.user).to.have.property('id');",
+									"    pm.expect(jsonData.user).to.have.property('username');",
+									"    pm.expect(jsonData.user).to.have.property('email');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario en el sistema.\n\n**Validaciones:**\n- username: 3-50 caracteres, solo alfanuméricos, guiones y guiones bajos\n- email: formato de email válido\n- password: mínimo 8 caracteres, al menos 1 mayúscula, 1 minúscula y 1 número"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has access token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('access_token');",
+									"    pm.expect(jsonData).to.have.property('refresh_token');",
+									"    pm.expect(jsonData).to.have.property('expires_in');",
+									"    pm.expect(jsonData).to.have.property('token_type');",
+									"    pm.expect(jsonData.token_type).to.eql('Bearer');",
+									"    ",
+									"    // Save tokens in collection variables",
+									"    pm.collectionVariables.set('auth_token', jsonData.access_token);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+									"});",
+									"",
+									"pm.test(\"Token expires in 5 minutes\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.expires_in).to.eql(300);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica un usuario y retorna un JWT válido por 5 minutos más un refresh token.\n\nLos tokens se guardan automáticamente en las variables `auth_token` y `refresh_token` para usar en las siguientes peticiones."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has new tokens\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('access_token');",
+									"    pm.expect(jsonData).to.have.property('refresh_token');",
+									"    pm.expect(jsonData).to.have.property('expires_in');",
+									"    pm.expect(jsonData).to.have.property('token_type');",
+									"    pm.expect(jsonData.token_type).to.eql('Bearer');",
+									"    ",
+									"    // Update tokens in collection variables",
+									"    pm.collectionVariables.set('auth_token', jsonData.access_token);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Renueva el access token usando el refresh token.\n\nImplementa rotación de tokens: el refresh token viejo se invalida y se genera uno nuevo.\n\n**Token Rotation:** El refresh token usado se revoca automáticamente y se retorna uno nuevo."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has logout message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Cierra la sesión del usuario revocando todos sus refresh tokens.\n\n**Requiere autenticación:** Bearer Token\n\n**Importante:** Invalida todos los refresh tokens activos del usuario."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación y registro de usuarios"
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Listar products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"products"
+							]
+						},
+						"description": "Obtiene la lista de todos los products disponibles.\n\n**Requiere autenticación:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Producto por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has product data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"    pm.expect(jsonData).to.have.property('price');",
+									"    pm.expect(jsonData).to.have.property('stock');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Get a specific product by UUID.\n\n**Requiere autenticación:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Producto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has product data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"    pm.expect(jsonData).to.have.property('price');",
+									"    pm.expect(jsonData).to.have.property('stock');",
+									"    ",
+									"    // Save the created product ID",
+									"    pm.collectionVariables.set('product_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Laptop HP Pavilion\",\n  \"description\": \"Laptop HP Pavilion 15.6 pulgadas, Intel Core i7, 16GB RAM, 512GB SSD\",\n  \"price\": 899.99,\n  \"stock\": 25\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"products"
+							]
+						},
+						"description": "Create a new product in the system.\n\n**Validaciones:**\n- name: requerido, string\n- description: requerido, string\n- price: requerido, número positivo\n- stock: requerido, número entero no negativo\n\n**Requiere autenticación:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Producto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has updated product data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"    pm.expect(jsonData).to.have.property('price');",
+									"    pm.expect(jsonData).to.have.property('stock');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"price\": 799.99,\n  \"stock\": 30\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Partially update an existing product.\n\nYou can send only the fields you want to update.\n\n**Requiere autenticación:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Producto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/products/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"products",
+								"{{product_id}}"
+							]
+						},
+						"description": "Permanently delete a product from the system.\n\n**Requiere autenticación:** Bearer Token"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for products management (Complete CRUD)\n\nAll routes require authentication via Bearer Token."
+		},
+		{
+			"name": "Onboarding",
+			"item": [
+				{
+					"name": "Create Onboarding",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has onboarding data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('document');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('initialAmount');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData.status).to.eql('REQUESTED');",
+									"    ",
+									"    // Save onboarding ID",
+									"    pm.collectionVariables.set('onboarding_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"document\": \"123456789\",\n  \"email\": \"john.doe@example.com\",\n  \"initialAmount\": 100000.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/onboarding",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"onboarding"
+							]
+						},
+						"description": "Create a new bank account onboarding request.\n\n**Banking Validations:**\n- name: required, max 255 characters\n- document: required, 5-50 characters, alphanumeric + hyphens (encrypted in DB)\n- email: required, valid email format, unique\n- initialAmount: required, minimum $50,000, maximum $1,000,000,000\n\n**Security:**\n- Document field is encrypted with AES-256-GCM\n- Document hash stored for duplicate detection\n- Anti-fraud: checks for duplicate documents and emails\n\n**Requires authentication:** Bearer Token\n\n**Status:** Automatically set as REQUESTED"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Onboardings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/onboarding",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"onboarding"
+							]
+						},
+						"description": "Get all onboarding requests for the authenticated user.\n\n**Security:**\n- Only returns onboardings owned by the authenticated user\n- Document field is automatically decrypted for display\n\n**Requires authentication:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Onboarding by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has onboarding data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('document');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/onboarding/{{onboarding_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"onboarding",
+								"{{onboarding_id}}"
+							]
+						},
+						"description": "Get a specific onboarding request by UUID.\n\n**Security:**\n- Validates ownership: only the owner can view their onboarding\n- Document field is automatically decrypted\n- Returns 403 Forbidden if user tries to access another user's onboarding\n\n**Requires authentication:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Onboarding Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has updated status\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/onboarding/{{onboarding_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"onboarding",
+								"{{onboarding_id}}",
+								"status"
+							]
+						},
+						"description": "Update the status of an onboarding request.\n\n**Valid Statuses:**\n- REQUESTED: Initial state\n- IN_PROGRESS: Being processed\n- COMPLETED: Successfully completed\n- REJECTED: Rejected by bank\n\n**Workflow:**\nREQUESTED → IN_PROGRESS → COMPLETED/REJECTED\n\n**Security:**\n- Validates ownership: only the owner can update their onboarding\n- Returns 403 Forbidden if user tries to update another user's onboarding\n\n**Requires authentication:** Bearer Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Onboarding (Soft Delete)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/onboarding/{{onboarding_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"onboarding",
+								"{{onboarding_id}}"
+							]
+						},
+						"description": "Soft delete an onboarding request (audit trail).\n\n**Soft Delete:**\n- Record is NOT physically deleted from database\n- Sets `deleted_at` timestamp for audit compliance\n- Deleted records are excluded from normal queries\n- Can be recovered using `withDeleted()` query option\n\n**Banking Compliance:**\nSoft deletes ensure regulatory compliance and audit trails required by financial institutions.\n\n**Security:**\n- Validates ownership: only the owner can delete their onboarding\n- Returns 403 Forbidden if user tries to delete another user's onboarding\n\n**Requires authentication:** Bearer Token"
+					},
+					"response": []
+				}
+			],
+			"description": "Banking onboarding endpoints with complete CRUD operations, PII encryption, and audit trail.\n\nAll routes require authentication and validate user ownership."
+		},
+		{
+			"name": "Health Check",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has ok property\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('ok');",
+							"    pm.expect(jsonData.ok).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "Check if the API is running correctly.\n\nDoes not require authentication."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "onboarding_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

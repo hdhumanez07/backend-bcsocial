@@ -1,0 +1,36 @@
+# Dependencias
+node_modules
+npm-debug.log
+pnpm-debug.log
+yarn-error.log
+
+# Archivos de pruebas
+*.spec.ts
+test
+coverage
+
+# Archivos de desarrollo
+.git
+.gitignore
+.env*
+!.env.production
+.vscode
+.idea
+
+# Archivos compilados
+dist
+build
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Documentación
+README.md
+*.md
+!package.json
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
