@@ -6,14 +6,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from './product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { SumProduct } from './entities/sum.entity';
+import { Product } from './entities/product.entity';
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(SumProduct)
+    private readonly sumProductRepository: Repository<SumProduct>,
   ) {}
   async create(createProductDto: CreateProductDto): Promise<Product> {
     try {
@@ -53,7 +56,15 @@ export class ProductsService {
       if (!product) {
         throw new NotFoundException(`Product with ID ${id} not found`);
       }
-      return product;
+      const sumProduct = await this.sumProductRepository.increment(
+        { id: '18b90291-eb46-42a3-a304-646bbb360aed' },
+        'sumProduct',
+        1,
+      );
+      return {
+        ...product,
+        ...sumProduct,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

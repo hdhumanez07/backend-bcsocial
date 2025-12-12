@@ -2,13 +2,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Product } from './product.entity';
 import { Repository } from 'typeorm';
 import {
   BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { Product } from './entities/product.entity';
+import { SumProduct } from './entities/sum.entity';
 describe('ProductsService', () => {
   let service: ProductsService;
   let repository: Repository<Product>;
@@ -29,6 +30,10 @@ describe('ProductsService', () => {
     remove: jest.fn(),
     softRemove: jest.fn(),
   };
+
+  const mockSumRepository = {
+    increment: jest.fn(),
+  };
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +41,10 @@ describe('ProductsService', () => {
         {
           provide: getRepositoryToken(Product),
           useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(SumProduct),
+          useValue: mockSumRepository,
         },
       ],
     }).compile();
@@ -97,6 +106,8 @@ describe('ProductsService', () => {
   describe('findOne', () => {
     it('should return a product by id', async () => {
       mockRepository.findOne.mockResolvedValue(mockProduct);
+      mockSumRepository.increment.mockResolvedValue(undefined);
+
       const result = await service.findOne(mockProduct.id);
       expect(result).toEqual(mockProduct);
       expect(mockRepository.findOne).toHaveBeenCalledWith({
@@ -110,6 +121,8 @@ describe('ProductsService', () => {
     });
     it('should throw NotFoundException when product not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
+      mockSumRepository.increment.mockResolvedValue(undefined);
+
       await expect(service.findOne(mockProduct.id)).rejects.toThrow(
         NotFoundException,
       );
@@ -120,6 +133,7 @@ describe('ProductsService', () => {
       const updateDto = { price: 149.99 };
       const updatedProduct = { ...mockProduct, ...updateDto };
       mockRepository.findOne.mockResolvedValue(mockProduct);
+      mockSumRepository.increment.mockResolvedValue(undefined);
       mockRepository.save.mockResolvedValue(updatedProduct);
       const result = await service.update(mockProduct.id, updateDto);
       expect(result).toEqual(updatedProduct);
@@ -134,6 +148,7 @@ describe('ProductsService', () => {
   describe('remove', () => {
     it('should soft delete a product', async () => {
       mockRepository.findOne.mockResolvedValue(mockProduct);
+      mockSumRepository.increment.mockResolvedValue(undefined);
       mockRepository.softRemove.mockResolvedValue(mockProduct);
       await service.remove(mockProduct.id);
       expect(mockRepository.softRemove).toHaveBeenCalledWith(mockProduct);
